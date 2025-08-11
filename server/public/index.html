@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bob's Corn</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .corn-animation {
+      animation: bounce 0.5s ease-in-out;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+    }
+  </style>
+</head>
+<body class="bg-amber-50 min-h-screen flex flex-col items-center justify-center p-4">
+  <div class="max-w-md w-full bg-white rounded-lg shadow-lg p-6 space-y-6">
+    <div class="text-center">
+      <h1 class="text-3xl font-bold text-amber-700">Bob's Corn</h1>
+      <p class="text-gray-600 mt-2">El granjero más justo de la ciudad 🌽</p>
+    </div>
+    
+    <div class="space-y-4">
+      <div>
+        <label for="clientId" class="block text-sm font-medium text-gray-700 mb-1">
+          ID de Cliente
+        </label>
+        <input
+          type="text"
+          id="clientId"
+          class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+          placeholder="Introduce tu ID de cliente"
+        >
+      </div>
+      
+      <button
+        id="buyButton"
+        class="w-full py-2 px-4 rounded-md font-medium text-white bg-amber-600 hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500"
+      >
+        Comprar Maíz
+      </button>
+      
+      <div id="errorMessage" class="p-3 bg-red-100 border border-red-200 text-red-700 rounded-md hidden"></div>
+      
+      <div id="successMessage" class="p-3 bg-green-100 border border-green-200 text-green-700 rounded-md flex items-center justify-between hidden">
+        <span id="successText"></span>
+        <span id="cornEmoji" class="text-2xl">🌽</span>
+      </div>
+      
+      <div id="purchaseHistory" class="p-3 bg-amber-100 border border-amber-200 text-amber-700 rounded-md hidden">
+        <p class="font-medium">Historial de Compras</p>
+        <p id="purchaseCount"></p>
+      </div>
+    </div>
+    
+    <div class="text-xs text-gray-500 text-center mt-4">
+      <p>Política: 1 maíz por cliente por minuto</p>
+    </div>
+  </div>
+
+  <script>
+    // Elementos del DOM
+    const clientIdInput = document.getElementById('clientId');
+    const buyButton = document.getElementById('buyButton');
+    const errorMessage = document.getElementById('errorMessage');
+    const successMessage = document.getElementById('successMessage');
+    const successText = document.getElementById('successText');
+    const cornEmoji = document.getElementById('cornEmoji');
+    const purchaseHistory = document.getElementById('purchaseHistory');
+    const purchaseCount = document.getElementById('purchaseCount');
+    
+    // Estado
+    let countdown = 0;
+    let countdownInterval = null;
+    
+    // Actualizar el botón durante la cuenta regresiva
+    function updateButtonState() {
+      if (countdown > 0) {
+        buyButton.disabled = true;
+        buyButton.classList.add('bg-gray-400', 'cursor-not-allowed');
+        buyButton.classList.remove('bg-amber-600', 'hover:bg-amber-700');
+        buyButton.textContent = `Intentar de nuevo en ${countdown}s`;
+      } else {
+        buyButton.disabled = false;
+        buyButton.classList.remove('bg-gray-400', 'cursor-not-allowed');
+        buyButton.classList.add('bg-amber-600', 'hover:bg-amber-700');
+        buyButton.textContent = 'Comprar Maíz';
+      }
+    }
+    
+    // Iniciar cuenta regresiva
+    function startCountdown() {
+      countdown = 60;
+      updateButtonState();
+      
+      if (countdownInterval) {
+        clearInterval(countdownInterval);
+      }
+      
+      countdownInterval = setInterval(() => {
+        countdown--;
+        updateButtonState();
+        
+        if (countdown <= 0) {
+          clearInterval(countdownInterval);
+        }
+      }, 1000);
+    }
+    
+    // Obtener historial de compras
+    async function fetchPurchases() {
+      const clientId = clientIdInput.value.trim();
+      if (!clientId) return;
+      
+      try {
+        const response = await fetch(`/api/purchases/${clientId}`);
+        const data = await response.json();
+        
+        if (data.purchaseCount > 0) {
+          purchaseCount.textContent = `Has comprado ${data.purchaseCount} maíz hasta ahora!`;
+          purchaseHistory.classList.remove('hidden');
+        } else {
+          purchaseHistory.classList.add('hidden');
+        }
+      } catch (error) {
+        console.error('Error al obtener historial de compras:', error);
+      }
+    }
+    
+    // Manejar compra de maíz
+    async function handleBuyCorn() {
+      const clientId = clientIdInput.value.trim();
+      
+      // Validar entrada
+      if (!clientId) {
+        errorMessage.textContent = 'Por favor, introduce un ID de cliente';
+        errorMessage.classList.remove('hidden');
+        return;
+      }
+      
+      // Ocultar mensajes anteriores
+      errorMessage.classList.add('hidden');
+      successMessage.classList.add('hidden');
+      
+      // Deshabilitar botón durante la petición
+      buyButton.disabled = true;
+      buyButton.textContent = 'Procesando...';
+      
+      try {
+        const response = await fetch('/api/buy-corn', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ clientId })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          // Éxito
+          successText.textContent = data.message;
+          successMessage.classList.remove('hidden');
+          
+          // Animar emoji
+          cornEmoji.classList.add('corn-animation');
+          setTimeout(() => cornEmoji.classList.remove('corn-animation'), 500);
+          
+          // Actualizar historial
+          fetchPurchases();
+        } else {
+          // Error
+          errorMessage.textContent = data.message || 'Error al comprar maíz';
+          errorMessage.classList.remove('hidden');
+          
+          // Iniciar cuenta regresiva si hay límite de tasa
+          if (response.status === 429) {
+            startCountdown();
+          }
+        }
+      } catch (error) {
+        console.error('Error al comprar maíz:', error);
+        errorMessage.textContent = 'Error al conectar con el servidor';
+        errorMessage.classList.remove('hidden');
+      } finally {
+        // Restaurar botón si no hay cuenta regresiva
+        if (countdown <= 0) {
+          buyButton.disabled = false;
+          buyButton.textContent = 'Comprar Maíz';
+        }
+      }
+    }
+    
+    // Evento para el botón de compra
+    buyButton.addEventListener('click', handleBuyCorn);
+    
+    // Actualizar historial cuando cambia el ID de cliente
+    clientIdInput.addEventListener('input', () => {
+      errorMessage.classList.add('hidden');
+      successMessage.classList.add('hidden');
+      fetchPurchases();
+    });
+    
+    // Cargar historial inicial si hay un ID de cliente
+    fetchPurchases();
+  </script>
+</body>
+</html>

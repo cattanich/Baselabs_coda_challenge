@@ -1,86 +1,85 @@
 # Bob's Corn Rate Limiter Challenge
 
-This project implements a rate limiter for Bob's Corn business. It includes a backend server that limits clients to purchasing 1 corn per minute and a frontend with both React and Backbone.js components.
+This project implements a rate limiter for Bob's Corn business. It includes a server that limits clients to purchasing 1 corn per minute and a frontend web interface for clients to purchase corn.
 
-## Project Structure
+## Overview
 
-- `/server` - Express.js backend with SQLite database
-- `/client` - Frontend with React and Backbone.js using Tailwind CSS
+The solution uses a simplified approach with an Express server that handles both the API for rate limiting and serving the user interface. The rate limiter is implemented using SQLite, which stores purchases with timestamps to check against requests.
 
 ## Features
 
-- SQLite database-based rate limiter (no installation required)
-- Dual frontend implementation (React and Backbone.js)
-- Clean, responsive interface
+- SQLite-based rate limiter (1 corn per client per minute)
+- Clean, responsive user interface with TailwindCSS
 - Visual feedback for successful purchases
 - Countdown timer for rate-limited requests
 - Purchase history tracking
 
 ## Technology Stack
 
-### Backend
-- Node.js
-- Express.js
-- SQLite (via sqlite3)
-- Cors for cross-origin support
-- Dotenv for configuration
+- **Backend**:
+  - Node.js
+  - Express.js
+  - SQLite (via sqlite3)
+  - CORS for cross-origin support
 
-### Frontend
-- React for main application
-- Backbone.js for purchase component
-- jQuery and Underscore.js (for Backbone)
-- Tailwind CSS for styling
-- Axios for API requests
+- **Frontend**:
+  - HTML5
+  - JavaScript (Vanilla)
+  - TailwindCSS (via CDN)
+  - CSS Animations
 
-## Installation
+## Project Structure
+
+```
+bobs_corn/
+├── server/
+│   ├── data/                  # Directory for SQLite database
+│   ├── public/                # Static files for frontend
+│   │   └── index.html         # Main page with HTML, CSS, and JavaScript
+│   ├── index.js               # Express server and rate limiting logic
+│   └── package.json           # Project dependencies
+└── README.md                  # Project documentation
+```
+
+## Installation and Running
 
 ### Prerequisites
-- Node.js (v14 or later)
+- Node.js (v14 or higher)
 
-### Backend Setup
+### Installation
 ```bash
 cd server
 npm install
-npm run dev
 ```
 
-### Frontend Setup
+### Running
 ```bash
-cd client
-npm install
 npm start
 ```
 
+The server will run at `http://localhost:3001`. Open this URL in your browser to access the application.
+
 ## API Endpoints
 
-- `POST /api/buy-corn` - Purchase corn (requires `clientId` in request body)
-- `GET /api/purchases/:clientId` - Get purchase history for a client
-- `GET /api/health` - Health check endpoint
+- `POST /api/buy-corn`: Purchase corn (requires `clientId` in request body)
+- `GET /api/purchases/:clientId`: Get purchase history for a client
+- `GET /api/health`: Health check endpoint
 
-## Usage
+## Rate Limiter Implementation
 
-1. Enter a client ID in the input field
-2. Use either the React or Backbone.js component to buy corn
-3. If you try to make another purchase within 1 minute, you'll receive a rate limit error
-4. The countdown timer will show when you can make another purchase
-5. Your purchase history is displayed for both components
+The rate limiter works by following these steps:
 
-## Implementation Details
-
-### Rate Limiter Logic
-The rate limiter works by recording each purchase with a timestamp in a SQLite database. When a client attempts to make a purchase, the server checks if there are any records for that client within the last minute. If there are, the request is rejected with a 429 status code.
-
-### Backbone.js Integration
-The project demonstrates how to integrate Backbone.js with modern React applications:
-- `CornPurchase` model handles the business logic
-- `PurchaseView` renders the UI and handles user interactions
-- Both are initialized and managed within the React application
-
-### Database Schema
-- `rate_limiter` table: Tracks client purchase timestamps for rate limiting
-- `corn_purchases` table: Records all successful purchases for history
+1. When a client attempts to purchase corn, the server checks the database to see if that client has made any purchases within the last minute.
+2. If there are any recent purchases, the request is rejected with a 429 status code (Too Many Requests).
+3. If there are no recent purchases, the purchase is processed and recorded in the database with the current timestamp.
 
 ## Future Improvements
-- Add authentication/authorization
-- Implement more sophisticated rate limiting strategies
-- Add admin dashboard for monitoring
+
+- User authentication
+- Admin dashboard
+- More sophisticated rate-limiting strategies
+- Automated testing
+
+## Credits
+
+Developed for BaseLabs coding challenge.
