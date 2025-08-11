@@ -1,7 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import $ from 'jquery';
+import Backbone from 'backbone';
+import _ from 'underscore';
 import CornPurchase from './backbone/models/CornPurchase';
 import PurchaseView from './backbone/views/PurchaseView';
+
+// Configurar jQuery para CORS
+$.support.cors = true;
 
 const API_URL = 'http://localhost:3001/api';
 
@@ -18,15 +24,25 @@ function App() {
   const backboneModelRef = useRef(null);
   const backboneViewRef = useRef(null);
 
-  // Initialize Backbone components
+  // Initialize Backbone components after render
   useEffect(() => {
-    // Create Backbone model
-    backboneModelRef.current = new CornPurchase();
-    
-    // Create Backbone view
-    backboneViewRef.current = new PurchaseView({
-      model: backboneModelRef.current
-    });
+    // Wait to make sure the DOM element exists
+    setTimeout(() => {
+      try {
+        // Create Backbone model
+        backboneModelRef.current = new CornPurchase();
+        
+        // Create Backbone view
+        backboneViewRef.current = new PurchaseView({
+          model: backboneModelRef.current,
+          el: '#backbone-purchase-form' // Make sure this element exists
+        });
+        
+        console.log('Backbone component initialized');
+      } catch (err) {
+        console.error('Error initializing Backbone component:', err);
+      }
+    }, 100);
     
     // Clean up on unmount
     return () => {
@@ -169,7 +185,10 @@ function App() {
         </div>
         
         {/* Backbone.js Purchase Component */}
-        <div id="backbone-purchase-form"></div>
+        <div>
+          <h2 className="text-xl font-semibold text-amber-800 mb-4">Backbone.js Purchase</h2>
+          <div id="backbone-purchase-form" className="border border-amber-300 rounded-md p-4"></div>
+        </div>
         
         <div className="text-xs text-gray-500 text-center mt-4">
           <p>Policy: 1 corn per client per minute</p>

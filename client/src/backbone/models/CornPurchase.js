@@ -1,5 +1,6 @@
 // models/CornPurchase.js
 import Backbone from 'backbone';
+import $ from 'jquery';
 
 const API_URL = 'http://localhost:3001/api';
 
@@ -13,10 +14,7 @@ const CornPurchase = Backbone.Model.extend({
     status: ''
   },
   
-  // URL for the model
-  urlRoot: `${API_URL}/buy-corn`,
-  
-  // Method to buy corn
+  // Method to buy corn using jQuery AJAX
   buyCorn: function() {
     if (!this.get('clientId')) {
       this.set({
@@ -26,55 +24,69 @@ const CornPurchase = Backbone.Model.extend({
       return Promise.reject(new Error('Client ID is required'));
     }
     
-    return fetch(`${API_URL}/buy-corn`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ clientId: this.get('clientId') })
-    })
-    .then(response => {
-      if (!response.ok) {
-        if (response.status === 429) {
+    console.log('Buying corn for client:', this.get('clientId'));
+    
+    return new Promise((resolve, reject) => {
+      $.ajax({
+        url: `${API_URL}/buy-corn`,
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({ clientId: this.get('clientId') }),
+        crossDomain: true,
+        success: (data) => {
+          console.log('Buy corn success:', data);
           this.set({
-            isRateLimited: true,
-            countdown: 60,
-            status: 'error',
-            message: 'Rate limit exceeded: You can only buy 1 corn per minute'
+            status: 'success',
+            message: data.message
           });
+          this.fetchPurchaseCount();
+          resolve(data);
+        },
+        error: (xhr, status, error) => {
+          console.error('Error buying corn:', status, error);
+          if (xhr.status === 429) {
+            this.set({
+              isRateLimited: true,
+              countdown: 60,
+              status: 'error',
+              message: 'Rate limit exceeded: You can only buy 1 corn per minute'
+            });
+          } else {
+            this.set({
+              status: 'error',
+              message: error || 'Failed to buy corn'
+            });
+          }
+          reject(error);
         }
-        return response.json().then(err => Promise.reject(err));
-      }
-      return response.json();
-    })
-    .then(data => {
-      this.set({
-        status: 'success',
-        message: data.message
       });
-      this.fetchPurchaseCount();
-      return data;
-    })
-    .catch(error => {
-      if (!this.get('isRateLimited')) {
-        this.set({
-          status: 'error',
-          message: error.message || 'Failed to buy corn'
-        });
-      }
-      throw error;
     });
   },
   
-  // Method to fetch purchase count
+  // Method to fetch purchase count using jQuery AJAX
   fetchPurchaseCount: function() {
     const clientId = this.get('clientId');
     if (!clientId) return Promise.resolve();
     
-    return fetch(`${API_URL}/purchases/${clientId}`)
-      .then(response => response.json())
-      .then(data => {
-        this.set({ purchaseCount: data.purchaseCount });
-        return data;
+    console.log('Fetching purchase count for', clientId);
+    
+    return new Promise((resolve, reject) => {
+      $.ajax({
+        url: `${API_URL}/purchases/${clientId}`,
+        method: 'GET',
+        contentType: 'application/json',
+        crossDomain: true,
+        success: (data) => {
+          console.log('Purchase data:', data);
+          this.set({ purchaseCount: data.purchaseCount });
+          resolve(data);
+        },
+        error: (xhr, status, error) => {
+          console.error('Error fetching purchases:', status, error);
+          reject(error);
+        }
       });
+    });
   },
   
   // Countdown timer methods

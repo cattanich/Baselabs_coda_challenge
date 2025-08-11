@@ -4,14 +4,13 @@ import $ from 'jquery';
 import _ from 'underscore';
 
 const PurchaseView = Backbone.View.extend({
-  el: '#backbone-purchase-form',
-  
   template: _.template(`
-    <div class="p-4 border border-amber-300 rounded-md bg-amber-50">
-      <h2 class="text-xl font-bold text-amber-800 mb-4">Backbone.js Purchase Component</h2>
-      <div class="mb-4">
-        <label class="block text-sm font-medium text-gray-700 mb-1">Client ID</label>
-        <input 
+    <div class="space-y-4">
+      <div>
+        <label for="backbone-client-id" class="block text-sm font-medium text-gray-700 mb-1">
+          Client ID (Backbone)
+        </label>
+        <input
           type="text" 
           id="backbone-client-id" 
           class="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
@@ -30,13 +29,13 @@ const PurchaseView = Backbone.View.extend({
       </button>
       
       <% if (status === 'error') { %>
-        <div class="p-3 mt-4 bg-red-100 border border-red-200 text-red-700 rounded-md">
+        <div class="p-3 bg-red-100 border border-red-200 text-red-700 rounded-md">
           <%= message %>
         </div>
       <% } %>
       
       <% if (status === 'success') { %>
-        <div class="p-3 mt-4 bg-green-100 border border-green-200 text-green-700 rounded-md flex items-center justify-between">
+        <div class="p-3 bg-green-100 border border-green-200 text-green-700 rounded-md flex items-center justify-between">
           <span><%= message %></span>
           <span class="text-2xl <%= animateCorn ? 'corn-animation' : '' %>">
             🌽
@@ -45,7 +44,7 @@ const PurchaseView = Backbone.View.extend({
       <% } %>
       
       <% if (purchaseCount > 0) { %>
-        <div class="p-3 mt-4 bg-amber-100 border border-amber-200 text-amber-700 rounded-md">
+        <div class="p-3 bg-amber-100 border border-amber-200 text-amber-700 rounded-md">
           <p class="font-medium">Backbone Purchase History</p>
           <p>You've bought <%= purchaseCount %> corn using Backbone.js!</p>
         </div>
@@ -61,6 +60,7 @@ const PurchaseView = Backbone.View.extend({
   initialize: function() {
     this.listenTo(this.model, 'change', this.render);
     this.render();
+    console.log('Backbone view initialized', this.el);
   },
   
   render: function() {
