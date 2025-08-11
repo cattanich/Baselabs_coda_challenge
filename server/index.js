@@ -7,23 +7,23 @@ const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Configuración básica
+// Basic configuration
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Crear directorio para la base de datos si no existe
+// Create directory for database if it doesn't exist
 const dataDir = path.join(__dirname, 'data');
 if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir);
 }
 
-// Base de datos SQLite
+// SQLite database
 const db = new sqlite3.Database(path.join(dataDir, 'bobs_corn.sqlite'));
 
-// Inicializar base de datos
+// Initialize database
 db.serialize(() => {
-  // Tabla para rastrear las compras y limitar la tasa
+  // Table to track purchases and rate limit
   db.run(`
     CREATE TABLE IF NOT EXISTS rate_limiter (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -32,71 +32,71 @@ db.serialize(() => {
     )
   `);
   
-  // Crear índice para búsquedas rápidas
+  // Create index for fast lookups
   db.run(`
     CREATE INDEX IF NOT EXISTS idx_client_time ON rate_limiter(client_id, purchase_time)
   `);
   
-  console.log('Base de datos inicializada correctamente');
+  console.log('Database initialized successfully');
 });
 
-// Endpoint para comprar maíz
+// Endpoint to buy corn
 app.post('/api/buy-corn', (req, res) => {
   const { clientId } = req.body;
   
   if (!clientId) {
-    return res.status(400).json({ error: 'Se requiere un ID de cliente' });
+    return res.status(400).json({ error: 'Client ID is required' });
   }
   
-  // Verificar límite de tasa (1 maíz por minuto)
+  // Check rate limit (1 corn per minute)
   db.get(`
     SELECT COUNT(*) as count 
     FROM rate_limiter 
     WHERE client_id = ? AND purchase_time > datetime('now', '-1 minute')
   `, [clientId], (err, row) => {
     if (err) {
-      console.error('Error al verificar límite de tasa:', err);
-      return res.status(500).json({ error: 'Error interno del servidor' });
+      console.error('Error checking rate limit:', err);
+      return res.status(500).json({ error: 'Internal Server Error' });
     }
     
-    // Si el cliente ya ha comprado maíz en el último minuto
+    // If client has already purchased corn in the last minute
     if (row.count > 0) {
       return res.status(429).json({
-        error: 'Demasiadas solicitudes',
-        message: 'Solo puedes comprar 1 maíz por minuto'
+        error: 'Too Many Requests',
+        message: 'You can only buy 1 corn per minute'
       });
     }
     
-    // Registrar la compra
+    // Record the purchase
     db.run('INSERT INTO rate_limiter (client_id) VALUES (?)', [clientId], function(err) {
       if (err) {
-        console.error('Error al registrar compra:', err);
-        return res.status(500).json({ error: 'Error interno del servidor' });
+        console.error('Error recording purchase:', err);
+        return res.status(500).json({ error: 'Internal Server Error' });
       }
       
-      // Éxito
+      // Success
       res.status(200).json({
         success: true,
-        message: 'Compra de maíz exitosa',
+        message: 'Corn purchase successful',
         emoji: '🌽'
       });
     });
   });
 });
 
-// Endpoint para obtener historial de compras
+// Endpoint to get purchase history
 app.get('/api/purchases/:clientId', (req, res) => {
   const { clientId } = req.params;
   
   if (!clientId) {
-    return res.status(400).json({ error: 'Se requiere un ID de cliente' });
+    return res.status(400).json({ error: 'Client ID is required' });
   }
   
-  // Contar compras totales
+  // Count total purchases
   db.get('SELECT COUNT(*) as count FROM rate_limiter WHERE client_id = ?', [clientId], (err, row) => {
     if (err) {
-      console.error('Error al obtener historial:', err);
-      return res.status(500).json({ error: 'Error interno del servidor' });
+      console.error('Error getting purchase history:', err);
+      return res.status(500).json({ error: 'Internal Server Error' });
     }
     
     res.status(200).json({
@@ -106,17 +106,17 @@ app.get('/api/purchases/:clientId', (req, res) => {
   });
 });
 
-// Ruta de salud para verificar que el servidor está funcionando
+// Health route to check server is running
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ status: 'OK', message: 'Servidor funcionando' });
+  res.status(200).json({ status: 'OK', message: 'Server is running' });
 });
 
-// Servir la aplicación frontend
+// Serve frontend application
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Iniciar el servidor
+// Start the server
 app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`Server running at http://localhost:${PORT}`);
 });
