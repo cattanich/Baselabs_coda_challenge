@@ -2,7 +2,8 @@
 import Backbone from 'backbone';
 import $ from 'jquery';
 
-const API_URL = 'http://localhost:3001/api';
+// Usamos rutas relativas en lugar de URLs absolutas
+const API_BASE = '/api';
 
 const CornPurchase = Backbone.Model.extend({
   defaults: {
@@ -28,11 +29,10 @@ const CornPurchase = Backbone.Model.extend({
     
     return new Promise((resolve, reject) => {
       $.ajax({
-        url: `${API_URL}/buy-corn`,
+        url: `${API_BASE}/buy-corn`,
         method: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({ clientId: this.get('clientId') }),
-        crossDomain: true,
         success: (data) => {
           console.log('Buy corn success:', data);
           this.set({
@@ -72,10 +72,9 @@ const CornPurchase = Backbone.Model.extend({
     
     return new Promise((resolve, reject) => {
       $.ajax({
-        url: `${API_URL}/purchases/${clientId}`,
+        url: `${API_BASE}/purchases/${clientId}`,
         method: 'GET',
         contentType: 'application/json',
-        crossDomain: true,
         success: (data) => {
           console.log('Purchase data:', data);
           this.set({ purchaseCount: data.purchaseCount });

@@ -6,10 +6,8 @@ import _ from 'underscore';
 import CornPurchase from './backbone/models/CornPurchase';
 import PurchaseView from './backbone/views/PurchaseView';
 
-// Configurar jQuery para CORS
-$.support.cors = true;
-
-const API_URL = 'http://localhost:3001/api';
+// Usamos rutas relativas en lugar de URLs absolutas
+const API_BASE = '/api';
 
 function App() {
   const [clientId, setClientId] = useState('');
@@ -76,7 +74,7 @@ function App() {
   // Fetch client's purchase history
   const fetchPurchases = async () => {
     try {
-      const response = await axios.get(`${API_URL}/purchases/${clientId}`);
+      const response = await axios.get(`${API_BASE}/purchases/${clientId}`);
       setPurchases(response.data.purchaseCount);
     } catch (err) {
       console.error('Error fetching purchases:', err);
@@ -102,7 +100,7 @@ function App() {
     setPurchaseStatus(null);
 
     try {
-      const response = await axios.post(`${API_URL}/buy-corn`, { clientId });
+      const response = await axios.post(`${API_BASE}/buy-corn`, { clientId });
       
       setPurchaseStatus(response.data);
       fetchPurchases(); // Update purchase count
